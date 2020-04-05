@@ -1,6 +1,7 @@
 #pragma once
-#include <string>
 #include <CascLib.h>
+
+#include <string>
 #include <iostream>
 
 //casclib wrapper
@@ -12,6 +13,7 @@ private:
 public:
 	FileFinder(std::string &path);
 	int extractFile(std::string &filename);
+	int extractFile(uint32_t &fileId);
 
 	~FileFinder();
 };

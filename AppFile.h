@@ -113,7 +113,8 @@ namespace AppFile {
 
 
 	struct texture_id_chunk {
-		uint32_t unkown1[25];
+		uint32_t id;
+		uint32_t unkown1[24];
 		uint32_t offset;
 		uint32_t size;
 
@@ -135,6 +136,7 @@ namespace AppFile {
 		uint32_t fileOffset;
 		uint32_t fileSize;
 		uint32_t id;
+		std::string snoName = "unset" ;
 
 		friend std::istream& operator>>(std::istream& is, texture& rhs);
 		friend std::ostream& operator<<(std::ostream& os, texture& rhs);

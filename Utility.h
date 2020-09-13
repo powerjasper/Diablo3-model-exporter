@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <stdio.h>
 #include <iostream>
 #include <sstream>
 #include <vector>

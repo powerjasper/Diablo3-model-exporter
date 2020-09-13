@@ -147,8 +147,8 @@ namespace AppFile {
 		is.read(reinterpret_cast<char *>(&tmpU), sizeof(tmpU));
 		is.read(reinterpret_cast<char *>(&tmpV), sizeof(tmpV));
 
-		rhs.u = (static_cast<float>(tmpU) - 32767) / 512.0;
-		rhs.v = 1 - ((static_cast<float>(tmpV) - 32767) / 512.0);
+		rhs.u = (static_cast<float>(tmpU) - 32767) / 512.0f;
+		rhs.v = 1 - ((static_cast<float>(tmpV) - 32767) / 512.0f);
 
 		return is;
 	}
@@ -253,7 +253,8 @@ namespace AppFile {
 
 	std::ostream& operator<<(std::ostream& os, texture_obj& rhs) {
 		os << "newmtl " << rhs.name << std::endl;
-		os << "map_Kd " << rhs.name << ".png" << std::endl;
+		os << "map_Kd " << rhs.snoName << ".png" << std::endl;
+
 		return os;
 	}
 
@@ -261,6 +262,7 @@ namespace AppFile {
 	* Texture id chunk
 	*/
 	std::istream& operator>>(std::istream& is, texture_id_chunk& rhs) {
+		is.read(reinterpret_cast<char*>(&rhs.id), sizeof(rhs.id));
 		is.read(reinterpret_cast<char*>(&rhs.unkown1), sizeof(rhs.unkown1));
 		is.read(reinterpret_cast<char*>(&rhs.offset), sizeof(rhs.offset));
 		is.read(reinterpret_cast<char*>(&rhs.size), sizeof(rhs.size));
@@ -269,6 +271,7 @@ namespace AppFile {
 	}
 	std::ostream& operator<<(std::ostream& os, texture_id_chunk& rhs) {
 		os << "----------Texture id Chunk----------" << std::endl;
+		os << "Texture type id: " << rhs.id << std::endl;
 		os << "Texture id offset: " << rhs.offset << std::endl;
 		os << "Texture id size: " << rhs.size << std::endl;
 		os << "---------------------------------" << std::endl;

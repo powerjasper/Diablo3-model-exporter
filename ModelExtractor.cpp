@@ -12,11 +12,12 @@ ModelExtractor::~ModelExtractor()
 
 }
 
-int ModelExtractor::dataToOBJ(AppFile::data & data, std::string name) {
+int ModelExtractor::dataToOBJ(AppFile::data & data, std::string name, SnoExtractor &sno) {
 	//zie tuxture gedeelte py bestand.
 	std::string objName = name + ".obj";
 	std::string mtlName = name + ".mtl";
 	std::fstream file;
+
 	file.open(objName, std::fstream::out);
 	int totalvertices = 0;
 	file << "O " << name << std::endl;
@@ -24,6 +25,7 @@ int ModelExtractor::dataToOBJ(AppFile::data & data, std::string name) {
 	for (auto & mesh : data.meshes)
 	{
 		file << "g " << mesh.name << std::endl;
+		file << "usemtl " << mesh.name << std::endl;
 		for (auto vert : mesh.vertices) {
 			file << vert;
 		}
@@ -35,25 +37,54 @@ int ModelExtractor::dataToOBJ(AppFile::data & data, std::string name) {
 	file.close();
 
 	file.open(mtlName, std::fstream::out);
+	std::vector<uint32_t> uniqueTextures;
+
 	for (auto & texture : data.textureContents.textureChunks)
 	{
-		//texture search and build
-		if (lib.extractFile(texture.id) == ERROR_SUCCESS) {
-			std::cout << std::endl << texture.name << " succes" << std::endl;
+		auto check = std::find(uniqueTextures.begin(), uniqueTextures.end(), texture.id);
+		if (check == uniqueTextures.end())
+		{
+			std::cout << "textersersr" << std::endl;
+			//texture search and build
+			std::string filePath = sno.getSno(texture.id);
+			// get file name
+			std::stringstream ss(filePath);
+			std::string tmpString;
+			while (ss.good())
+			{
+				std::getline(ss, tmpString, '\\');
+			}
+
+			auto error_msg = lib.extractFile(filePath);
+			if (error_msg == ERROR_SUCCESS) {
+				// image bs
+				std::cout << std::endl << texture.name << " succes" << std::endl;
+				ImageExtractor::TextToPng(tmpString);
+			}
+			else {
+
+				std::cout << std::endl << texture.name << ", " << texture.id << " no succes, error: " << error_msg << std::endl;
+			}
+			file << texture;
+			uniqueTextures.push_back(texture.id);
 		}
 		else {
-			std::cout << std::endl << texture.name << " no succes" << std::endl;
+			std::cout << uniqueTextures.size() << std::endl;
+			std::cout << "could not find: " << texture.id << std::endl;
 		}
-		file << texture;
+		
+
 	}
-	
+	file.close();
 
 	return 1;
 }
-AppFile::data ModelExtractor::convertFromFile(std::string &filename) {
+AppFile::data ModelExtractor::convertFromFile(std::string &filename, SnoExtractor &sno) {
 	std::ifstream infile;
 	infile.open(filename, std::ios::binary);
 	unsigned char bufferChar;
+
+
 	while (infile >> std::noskipws >> bufferChar) {
 		filebuffer.push_back(bufferChar);
 	}
@@ -73,7 +104,7 @@ AppFile::data ModelExtractor::convertFromFile(std::string &filename) {
 	texture >> model.textureContents;
 	std::cout << static_cast<AppFile::textures&>(model.textureContents);
 
-	int textureChuckOffset = model.textureContents.offset + 16;
+	int textureChunkOffset = model.textureContents.offset + 16;
 	int textureChunkSize = model.textureContents.size / model.textureContents.count;
 
 	for (size_t i = 0; i < model.textureContents.count; i++)
@@ -82,11 +113,13 @@ AppFile::data ModelExtractor::convertFromFile(std::string &filename) {
 		AppFile::texture_obj tmpTxt;
 		std::stringstream texture = Utility::toStream(
 			Utility::vectorResize<unsigned char>(
-				filebuffer, textureChuckOffset + textureOffset,
-				textureChuckOffset + model.textureContents.offset + textureOffset
+				filebuffer, textureChunkOffset + textureOffset,
+				textureChunkOffset + model.textureContents.offset + textureOffset
 				)
 		);
 		texture >> tmpTxt;
+
+		
 
 		//ID extraction
 		int idChunkOffset = tmpTxt.fileOffset + 16;
@@ -99,21 +132,40 @@ AppFile::data ModelExtractor::convertFromFile(std::string &filename) {
 			)
 		);
 		idChunk >> tmpTxtChunk;
+		if (tmpTxtChunk.id == 5) { // 4 is iets met FX_EMIT bs
+			int idOffset = tmpTxtChunk.offset + 16;
+			std::cout << "id offset: " << idOffset << std::endl;
+			AppFile::texture_id tmpTxtId;
+			std::stringstream id = Utility::toStream(
+				Utility::vectorResize<unsigned char>(
+					filebuffer, idOffset,
+					idOffset + tmpTxtChunk.size
+					)
+			);
+			id >> tmpTxtId;
+			tmpTxt.id = tmpTxtId.id;
+			std::cout << tmpTxt.id << std::endl;
+			std::string tmpSnoName = sno.getSno(tmpTxt.id);
+			std::stringstream ss(tmpSnoName);
+			std::string tmpString;
+			while (ss.good())
+			{
+				std::getline(ss, tmpString, '\\');
+			}
 
-		int idOffset = tmpTxtChunk.offset + 16;
-		std::cout << "id offset: " << idOffset << std::endl;
-		AppFile::texture_id tmpTxtId;
-		std::stringstream id = Utility::toStream(
-			Utility::vectorResize<unsigned char>(
-				filebuffer, idOffset,
-				idOffset + tmpTxtChunk.size
-				)
-		);
-		id >> tmpTxtId;
-		tmpTxt.id = tmpTxtId.id;
+			std::vector<std::string> filenameVect;
+			std::stringstream sss(tmpString);
+			while (sss.good())
+			{
+				std::getline(sss, tmpString, '.');
+				filenameVect.push_back(tmpString);
+			}
 
-		model.textureContents.textureChunks.push_back(tmpTxt);
-		std::cout << static_cast<AppFile::texture&>(tmpTxt);
+			tmpTxt.snoName = filenameVect[0];
+			model.textureContents.textureChunks.push_back(tmpTxt);
+			std::cout << static_cast<AppFile::texture&>(tmpTxt);
+		}
+		
 		
 	}
 	//meshes

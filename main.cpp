@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <filesystem>
 // diablo export
 #include "FileFinder.h"
 #include "AppFile.h"
@@ -18,38 +19,81 @@ uint32_t istreamToUint32(std::array<uint8_t, 4> & arr) {
 }
 
 int main(int argc, char** argv) {
+	if (argc > 2) {
+		std::cout << argc;
+		std::string gamePath = argv[1]; // argv 1
+		std::string filename = argv[2]; // argv 2
+		std::cout << gamePath << filename;
+		//std::getline(std::cin, filename);
 
-	std::string gamePath = "C:\\Program Files (x86)\\Diablo III\\";
-	std::string filename;
-	//std::cout << "Input full folder path:\n";
-	//std::getline(std::cin, gamePath);
+		//// file magic
+		FileFinder lib(gamePath);
+		std::string fullFilename = "Base\\Appearance\\" + filename + ".app";
+		auto state = lib.extractFile(fullFilename);
+		if (state == ERROR_SUCCESS) {
+			// maybe do this check in the constructor of SnoExtractor
+			SnoExtractor snoEx;
+			std::string snoCSVName = "sno.csv";
+			if (!std::filesystem::exists(snoCSVName))
+			{
 
-	std::cout << std::endl << "GamePath set as \"" << gamePath  << "\"" << std::endl;
-	std::cout << "Input text to search filename for: " << std::endl;
-	std::getline(std::cin, filename);
-	std::cout << std::endl << "Filename set as \"" << filename << "\"" << std::endl;
+				snoEx.SnoToCsv(gamePath);
 
-	//// file magic
-	FileFinder lib(gamePath);
-	std::string fullFilename = "Base\\Appearance\\" + filename + ".app";
-	if (lib.extractFile(fullFilename) == ERROR_SUCCESS) {
-		std::cout << std::endl << fullFilename << " succes" << std::endl;
-		ModelExtractor me(lib);
-		std::string convertFilename = filename + ".app";
-		AppFile::data model = me.convertFromFile(convertFilename);
-		me.dataToOBJ(model, filename);
+			}
+			snoEx.CsvToVect(snoCSVName);
 
+			std::cout << std::endl << fullFilename << " succes" << std::endl;
+			ModelExtractor me(lib);
+			std::string convertFilename = filename + ".app";
+			AppFile::data model = me.convertFromFile(convertFilename, snoEx);
+			me.dataToOBJ(model, filename, snoEx);
 
-		/*
-		// extracts sno from files
-		SnoExtractor snoEx;
-		snoEx.SnoToCsv(gamePath);*/
+			
+
+			return 1;
+		}
+		else {
+			std::cout << std::endl << fullFilename << " no succes" << std::endl;
+			std::cout << state;
+			return 0;
+		}
 	}
 	else {
-		std::cout << std::endl << fullFilename << " no succes" << std::endl;
-	}
+		std::string gamePath = "F:/blizzard/Diablo III/"; // argv 1
+		std::string filename = "a2dun_Zolt_black_soulstone"; // argv 2
 
-	
+		FileFinder lib(gamePath);
+		std::string fullFilename = "Base\\Appearance\\" + filename + ".app";
+		auto state = lib.extractFile(fullFilename);
+		if (state == ERROR_SUCCESS) {
+			// maybe do this check in the constructor of SnoExtractor
+			SnoExtractor snoEx;
+			std::string snoCSVName = "sno.csv";
+			if (!std::filesystem::exists(snoCSVName))
+			{
+
+				snoEx.SnoToCsv(gamePath);
+
+			}
+			
+			snoEx.CsvToVect(snoCSVName);
+
+			std::cout << std::endl << fullFilename << " succes" << std::endl;
+			ModelExtractor me(lib);
+			std::string convertFilename = filename + ".app";
+			AppFile::data model = me.convertFromFile(convertFilename, snoEx);
+			me.dataToOBJ(model, filename, snoEx);
+
+
+
+			return 1;
+		}
+		else {
+			std::cout << std::endl << fullFilename << " no succes" << std::endl;
+			std::cout << state;
+			return 0;
+		}
+	}
 
 	return 0;
 }

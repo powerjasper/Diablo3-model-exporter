@@ -6,7 +6,7 @@ int SnoExtractor::SnoToCsv(std::string &path) {
 	// read sno of each file at 0x10 writes it to csv. id, filename
 	std::string filename = "Base\\";
 	// so far Textures are the only neccesary id's more can be added here.
-	std::vector<std::string> subDirectories = {"Textures"};
+	std::vector<std::string> subDirectories = {"Textures", "Actor", "Particle"};
 	HANDLE hStorage = NULL;
 	HANDLE hFile = NULL;
 	HANDLE handle = NULL;
@@ -14,9 +14,9 @@ int SnoExtractor::SnoToCsv(std::string &path) {
 	CASC_FIND_DATA findData;
 	DWORD dwErrCode = ERROR_SUCCESS;
 	// filestream
+	
 	std::fstream file;
 	file.open("sno.csv", std::fstream::out);
-
 	// open the storage
 	for (std::string &subd : subDirectories)
 	{
@@ -48,7 +48,7 @@ int SnoExtractor::SnoToCsv(std::string &path) {
 		// write to file
 		if (dwErrCode == ERROR_SUCCESS)
 		{
-			char  szBuffer[0x14];
+			uint8_t  szBuffer[0x14];
 			DWORD dwBytes = 1;
 			CascReadFile(hFile, szBuffer, sizeof(szBuffer), &dwBytes);
 
@@ -74,7 +74,7 @@ int SnoExtractor::SnoToCsv(std::string &path) {
 				// write to file
 				if (dwErrCode == ERROR_SUCCESS)
 				{
-					char  szBuffer[0x14];
+					uint8_t  szBuffer[0x14];
 					DWORD dwBytes = 1;
 					CascReadFile(hFile, szBuffer, sizeof(szBuffer), &dwBytes);
 
@@ -106,16 +106,20 @@ int SnoExtractor::SnoToCsv(std::string &path) {
 
 void SnoExtractor::CsvToVect(std::string& filename)
 {
+	
 	std::fstream file;
 	file.open(filename, std::ios::in);
+	
 	while (file.good()) {
 		std::string id, path;
-		std::getline(file,id,',');
-		std::getline(file,path);
-		std::pair<uint32_t, std::string> idPathPair = std::make_pair(static_cast<uint32_t>(std::stoul(id)), path);
-		snoVect.push_back(idPathPair);
+		if(std::getline(file,id,',')){
+			std::getline(file,path);
+			std::pair<uint32_t, std::string> idPathPair = std::make_pair(static_cast<uint32_t>(std::stoul(id)), path);
+			snoVect.push_back(idPathPair);
+		}
 	}
-
+	
+	
 	file.close();
 }
 

@@ -27,4 +27,4 @@ If you run it for the first time the program will map some id's to files and aft
 When you run it without command line arguments it will try to run the program with my personal parameters which I use for lazy testing. There is a very slim chance that would work for your pc.
 
 
-### This is a very early build of the app and has only been tested on a few models. If any bugs occur ,and they will occur, take note of the model you tried out and send the info to me. This can best be done through issues.
+### This is a very early build of the app and has only been tested on a few models. If any bugs occur, and they will occur, take note of the model you tried out and send the info to me. This can best be done through issues.
